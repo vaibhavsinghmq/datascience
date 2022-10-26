@@ -1,0 +1,1 @@
+bq extract --destination_format=CSV --field_delimiter=',' --print_header=true 'assignment_3.p13_part12' gs://us-central1-mq-bigdata-tech-da4275b8-bucket/report/p19_daily_report_`date +%d-%m-%y`.csv
