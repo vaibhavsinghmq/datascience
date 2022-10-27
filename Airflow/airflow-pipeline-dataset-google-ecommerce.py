@@ -22,7 +22,7 @@ from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 default_args = {
     'owner':'airflow',
     'depends_on_past':False, # does this dag depend on the previous run of the dag, in our case false
-    'email':['vaibhav.singh@students.mq.edu.au'], # who to email if fails i.e me :)
+    'email':['vaibhav.singh@students.mq.edu.au'], #Receipient mail during failure
     'email_on_failure':True, # should we send emails on failure?
     'email_on_retry':True,# should we send an email in case of retry failure
     'retries':1, #if fails how many times should we retry?
@@ -38,7 +38,7 @@ P14. Schedule the pipeline so that it runs everyday. (5 points)
 dag = DAG(
     'Assignment-3', # give the dag a name 
     default_args=default_args, # pass the default args defined above or you can override them here if you want this dag to behave a little different
-    schedule_interval='*/1 * * * *', # define how often you want it to run - you can pass cron expressions here
+    schedule_interval='@daily',# every minute-> '*/1 * * * *', Daily ->'@daily', define how often you want it to run - you can pass cron expressions here
     description='A simple tutorial DAG',
     start_date=datetime(2022,10,26)
 )
