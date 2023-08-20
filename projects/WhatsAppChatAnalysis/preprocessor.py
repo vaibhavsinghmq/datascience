@@ -21,24 +21,22 @@ def has_special_characters(line):
     return False
 
 
+def extract_data(matches):
+    # Create lists for each column
+    chat_timestamps = [match[0] for match in matches]
+    users = [match[1] for match in matches]
+    messages = [match[2] for match in matches]
+    
+    return chat_timestamps, users, messages
+
+
 ## Take a text file as in input and return a dataframe
 def preprocess(data):
    try:
        
-       
-        #st.text(f"File Contents: HI Vaibhav {data}")
-    
-        #input_file_path = '_chat.txt'  # Replace with the path to your input file
-    
-        #with open(input_file_path, 'r', encoding='utf-8') as file:
-        #    content = file.read()
-        
-        # Remove the [U+200E] character from the content
+
         content_without_u200e = data.replace('\u200E', '')
-        #st.text(content_without_u200e)
-        
-        # If you want to see the modified content in memory
-        #st.write(content_without_u200e)
+
     
             ## Part-2
         
@@ -61,20 +59,33 @@ def preprocess(data):
         
         # Store the merged lines
         merged_content = '\n'.join(merged_lines)
-        
-        # Print a message indicating that the content has been processed
-        #st.text(f"merged_content:::{merged_content}")
-        
+ 
         
         ## Part 3
         # Extract data from the lines using regular expressions
-        pattern = r'\[(.*?)\] (.*?): (.*?)\n'
-        matches = re.findall(pattern, merged_content)
+        pattern1 = r'\[(.*?)\] (.*?): (.*?)\n'
+        pattern2 = r'^(.*?) - (.*?): (.*)$'
         
-        # Create lists for each column
-        chat_timestamps = [match[0] for match in matches]
-        users = [match[1] for match in matches]
-        messages = [match[2] for match in matches]
+        # Extract components from input1
+        matches = re.findall(pattern1, merged_content)
+        
+        chat_timestamps, users, messages = [],[],[]
+        
+        if matches:
+            st.text("In IF loop")
+            chat_timestamps, users, messages = extract_data(matches)
+            
+            
+        else:
+            st.text("In else loop")
+            matches = re.findall(pattern2, merged_content)
+            st.text(pattern2)
+            st.text(matches)
+            if matches:
+                chat_timestamps, users, messages = extract_data(matches)
+            
+        
+
         
         # Create a Pandas DataFrame
         columns = ['chat_timestamp', 'user', 'message']
@@ -88,7 +99,7 @@ def preprocess(data):
         df['month_num'] = df['chat_timestamp'].dt.month
         df['month'] = df['chat_timestamp'].dt.month_name()
         df['day'] = df['chat_timestamp'].dt.day
-        df['day_name'] = df['chat_timestamp'].dt.day_name()
+        df['day_of_week'] = df['chat_timestamp'].dt.day_name()
         df['hour'] = df['chat_timestamp'].dt.hour
         df['minute'] = df['chat_timestamp'].dt.minute
     
