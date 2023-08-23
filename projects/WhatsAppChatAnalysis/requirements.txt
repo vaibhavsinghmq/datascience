@@ -2,6 +2,8 @@ streamlit
 matplotlib
 seaborn
 urlextract
+networkx
+nltk
 wordcloud
 pandas
 emoji
