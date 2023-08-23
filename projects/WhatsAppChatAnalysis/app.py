@@ -52,7 +52,7 @@ def main():
         data = bytes_data.decode("utf-8")
         
         wa_users_data_df = preprocessor.preprocess(data) # create columns from chat file
-        
+        #st.text(wa_users_data_df)
         
         # Create a dropdown for year
         year_option = wa_users_data_df['year'].unique().tolist()
