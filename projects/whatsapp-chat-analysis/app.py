@@ -9,7 +9,11 @@ Created on Sat Aug 19 11:02:17 2023
 import streamlit as st
 import preprocessor, util
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import networkx as nx
+import seaborn as sns
+import pandas as pd
+import plotly.express as px
 
 
 st.config.set_option("server.maxUploadSize", 1)
@@ -46,9 +50,9 @@ def main():
     
     if uploaded_file is not None:
         
-        st.text(f"File Name: {uploaded_file.name}")
-        st.text(f"File Size: {uploaded_file.size}")
-        st.text(f"File Type: {uploaded_file.type}")
+       ## st.text(f"File Name: {uploaded_file.name}")
+        ##st.text(f"File Size: {uploaded_file.size}")
+        ##st.text(f"File Type: {uploaded_file.type}")
         
         
         bytes_data = uploaded_file.getvalue()
@@ -78,12 +82,28 @@ def main():
                 .appview-container .block-container{
                     max-width: 100%;    
                 }
+                .g1{
+                    background-color: #383edd;
+                    border-color: #383edd;
+                }
+                .g2{
+                    background-color: #3498f7;
+                    border-color: #3498f7;
+                }
+                .g3{
+                    background-color: #f6b243;
+                    border-color: #f6b243;
+                }
+                .g4{
+                    background-color: #e65353;
+                    border-color: #e65353;
+                }
                 .custom-div {
                     padding: 10px;
                     border: 1px solid #ccc;
-                    background-color: #fff;
                     text-align: center;
                     margin: 5px;
+                    text-color: #fff;
                 }
                 .custom-container {
                     display: flex;
@@ -111,55 +131,112 @@ def main():
                 with st.container():
                     col1, col2, col3, col4 = st.columns(4)
                     
-                    col1.markdown('<div class="custom-div"><div>Total Messages</div><div>{}</div></div>'.format(num_messages), unsafe_allow_html=True)
-                    col2.markdown('<div class="custom-div"><div>Total Words</div><div>{}</div></div>'.format(words), unsafe_allow_html=True)
-                    col3.markdown('<div class="custom-div"><div>Media Shared</div><div>{}</div></div>'.format(num_media_messages), unsafe_allow_html=True)
-                    col4.markdown('<div class="custom-div"><div>Links Shared</div><div>{}</div></div>'.format(num_links), unsafe_allow_html=True)
+                    col1.markdown('<div class="custom-div g1"><div>Total Messages</div><div>{}</div></div>'.format(num_messages), unsafe_allow_html=True)
+                    col2.markdown('<div class="custom-div g2"><div>Total Words</div><div>{}</div></div>'.format(words), unsafe_allow_html=True)
+                    col3.markdown('<div class="custom-div g3"><div>Media Shared</div><div>{}</div></div>'.format(num_media_messages), unsafe_allow_html=True)
+                    col4.markdown('<div class="custom-div g4"><div>Links Shared</div><div>{}</div></div>'.format(num_links), unsafe_allow_html=True)
     
                 # Create vertical space between containers
                 st.markdown("<br><br>", unsafe_allow_html=True)
     
                 with st.container():
-                    col1, col2, col3, col4 = st.columns(4)
+                    col1, col2 = st.columns(2)
                 
     
                     with col1:
-                        # daily activity
-                        fig, ax = plt.subplots()
-                        util.hourly_activity(wa_users_data_df).plot(kind='bar')
+                        
+                      
+                        # Create a Pandas Series (replace this with your actual data)
+                        hourly_counts = util.hourly_activity(wa_users_data_df)
+                        
+                        # Set the Seaborn style and context for a dark background
+                        sns.set(style='darkgrid', context='notebook')
+                        
+                        # Create the Seaborn plot with a dark background using the Pandas Series
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        sns.barplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')  # Replace 'orange' with your desired color
+                        
+                        # Set the title and labels
                         plt.title('Message Frequency by Hour:')
                         ax.set_xlabel('Hours')
+                        ax.set_ylabel('Message Count')
+                        
+                        # Display the plot using Streamlit
                         st.pyplot(fig)
+                      
                         
                     with col2:
-                        # weekly activity
-                        fig, ax = plt.subplots()
-                        util.weekly_activity(wa_users_data_df).plot(kind='bar')
-                        plt.title('Message Frequency by Day of the Week:')
-                        plt.xticks(range(7), ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
-                        ax.set_xlabel('Day of week')
+                        
+                        # Create a Pandas Series (replace this with your actual data)
+                        weekly_counts = util.weekly_activity(wa_users_data_df)
+                        
+                        # Define the order of days of the week
+                        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        
+                        # Set the Seaborn style and context for a dark background
+                        sns.set(style='darkgrid', context='notebook')
+                        
+                        # Create the Seaborn plot with a dark background using the grouped data
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        sns.barplot(x=weekly_counts.index, y=weekly_counts.values, order=day_order, color='#8A4D76')
+                        
+                        # Set the title and labels
+                        plt.title('Message Frequency by Day of the Week')
+                        ax.set_xlabel('Day of the Week')
+                        ax.set_ylabel('Message Count')
+                        
+                        # Display the plot using Streamlit
                         st.pyplot(fig)
-                        
+                      
+                
+                with st.container():
+                    col3, col4 = st.columns(2)
                     with col3:
-                        # Create the bar plot
-                        # Custom month labels
-                        month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    
                         
-                        fig, ax = plt.subplots()
-                        monthly_counts =util.monthly_activity(wa_users_data_df)
-                        monthly_counts.plot(kind='bar')
-                        plt.title('Message Frequency by Month:')
-                        plt.xlabel('Month')
-                        plt.xticks(monthly_counts.index - 1, [month_labels[i - 1] for i in monthly_counts.index])  # Set custom month labels
+                        # Assuming 'monthly_counts' is your data, and 'month_labels' is defined
+                        monthly_counts = util.monthly_activity(wa_users_data_df)
+                        #st.text(monthly_counts)
+                        month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                        
+                        # Create a bar plot with the order of months from January to December
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        sns.barplot(x=monthly_counts.index, y=monthly_counts.values, color="#8379f0")
+                        
+                        # Set the title and labels
+                        plt.title('Message Frequency by Month')
+                        ax.set_xlabel('Month')
+                        ax.set_ylabel('Message Count')
+                        
+                        # Display the plot using Streamlit
                         st.pyplot(fig)
                         
                            
                         
                     with col4:
+                        
+                        
                         # emoji analysis
                         emoji_df = util.emoji_helper(wa_users_data_df)
-                        st.dataframe(emoji_df, height=270)
+
+                        # Extract top 5 emojis and 'Other'
+                        top_5_emojis = emoji_df.head(5)
+                        other_emojis_count = emoji_df['count'].iloc[5:].sum()
+                        other_row = pd.DataFrame({'emoji': ['Other'], 'count': [other_emojis_count]})
+                        
+                        # Combine top 5 and 'Other' into a new DataFrame for pie chart
+                        emoji_pie_df = pd.concat([top_5_emojis, other_row])
+                        
+                        # Reset the index of the DataFrame
+                        emoji_pie_df.reset_index(drop=True, inplace=True)
+                        
+                        # Create a pie chart using Plotly
+                        fig = px.pie(emoji_pie_df, values='count', names='emoji', title='Top 5 Emoji Distribution')
+                        
+                        # Display the pie chart using Streamlit
+                        st.plotly_chart(fig)
+                        
+                        # Display the emoji DataFrame with colors
+                        st.dataframe(emoji_pie_df, height=270)
     
                     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -214,22 +291,30 @@ def main():
                         out_degree_centrality = nx.out_degree_centrality(G)
                         
                         
-                        # Get the first value (occurrence count)
-                        first_occurrence = next(iter(in_degree_centrality.values()))
-                        
-                        
                         # Print the most influential users based on in-degree centrality
+                        first_occurrence=""
+                        loop_counter=0
                         st.text("Top Influential Users based on In-Degree Centrality:")
                         for user, centrality in sorted(in_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6]:
+                            if loop_counter == 0:
+                                first_occurrence = centrality
+                                loop_counter=loop_counter+1
                             st.text(f"{user}: {centrality:.4f}")
                         
                         # Print the most influential users based on out-degree centrality
-                        out_sec = 0
+                        loop_counter = 0
                         st.text("\nTop Influential Users based on Out-Degree Centrality:")
                         for user, centrality in sorted(out_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6]:
-                            if out_sec == 0:
+                            if loop_counter == 0:
                                 out_sec = centrality
+                                loop_counter=loop_counter+1
                             st.text(f"{user}: {centrality:.4f}")
+                            
+                            
+                            
+                            
+                        ##st.text(f"first_occurrence:::=>{first_occurrence}")
+                        ##st.text(f"Out_sec:::=>{out_sec}")
                           
                             
                        

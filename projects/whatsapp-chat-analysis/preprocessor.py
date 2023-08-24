@@ -19,28 +19,42 @@ pattern2=r'\[(.*?)\] (.*?): (.*?)$'
 
 ## ANdroid code
 def identify_and_convert_date(date_string):
-    possible_formats = [
-        "%m/%d/%y, %I:%M %p",
-        "%d/%m/%Y, %I:%M %p"
+    formats_to_try = [
+      '%d/%m/%Y, %I:%M %p',
+      '%d/%m/%y, %I:%M %p',
+      '%m/%d/%y, %I:%M %p',
+      '%m/%d/%Y, %I:%M%p',
+      '%Y/%m/%d, %I:%M %p',
+      '%Y/%m/%d, %H:%M',
+      '%m/%d/%Y, %H:%M',
+      '%d/%m/%Y, %H:%M',
+      '%Y/%d/%m, %I:%M%p',
+      '%Y/%d/%m, %H:%M'
     ]
 
-    for format_str in possible_formats:
+    for date_format in formats_to_try:
         try:
-            parsed_date = datetime.strptime(re.split(r' - |: ', date_string)[0], format_str)
-            formatted_date = parsed_date.strftime('%-m/%-d/%y, %-I:%M %p')
-            return date_string.replace(re.split(r' - |: ', date_string)[0], formatted_date, 1)
+            dt = datetime.strptime(date_string[:date_string.index('-')].strip(), date_format)
+            rest_of_line = date_string[date_string.index('-')+1:].strip()
+            formatted_date_time = dt.strftime('[%d/%m/%Y, %H:%M:%S]')
+            formatted_line = f"{formatted_date_time} - {rest_of_line}"
+            return formatted_line
         except ValueError:
             pass
     
     return date_string
+
 
 def make_common_date_format(attr_keys,lines):
   common_date_lines=[]
   for date_string in lines:
 
       converted_date = identify_and_convert_date(date_string)
+      #st.text(f"Output::=>{converted_date}")
       common_date_lines.append(converted_date)
-  st.text(f"==STAGE 1== {attr_keys}::=> Original lines {len(lines)}, common date lines {len(common_date_lines)}")
+  ##st.text(f"==STAGE 1== {attr_keys}::=> Original lines {len(lines)}, common date lines {len(common_date_lines)}")
+
+  
   return common_date_lines
 
 
@@ -65,43 +79,51 @@ def remove_non_compliant_lines(attr_keys,lines):
     total_lines = len(lines)
     non_compliant_count = len(non_compliant_lines)
     percentage_of_non_compliant_lines = (non_compliant_count / total_lines) * 100
-    st.text(f"==STAGE 3== {attr_keys}::=> Total lines: {total_lines}, Non-compliant lines: {non_compliant_count},Percentage of non-compliant lines: {percentage_of_non_compliant_lines:.2f}%")
+    ##st.text(f"==STAGE 3== {attr_keys}::=> Total lines: {total_lines}, Non-compliant lines: {non_compliant_count},Percentage of non-compliant lines: {percentage_of_non_compliant_lines:.2f}%")
 
     if percentage_of_non_compliant_lines < 10:
-        st.text("Removing non-compliant lines due to high percentage.")
+        ##st.text("Removing non-compliant lines due to high percentage.")
         lines = [line for line in lines if re.match(check_non_compliant_pattern, line)]
-        st.text(f"Return Compliant lines: {len(lines)}")
+        ##st.text(f"Return Compliant lines: {len(lines)}")
         return lines
     else:
         for line in non_compliant_lines:
             print(line.strip())  # Print the non-compliant lines without leading/trailing whitespace
 
-        st.text(f"==STAGE 3-ERROR== {attr_keys}::=> Return Empty Array as Non-Compliant lines >10%:===> {len(non_compliant_lines)}")
+        ##st.text(f"==STAGE 3-ERROR== {attr_keys}::=> Return Empty Array as Non-Compliant lines >10%:===> {len(non_compliant_lines)}")
         return []
 
 
 def process_lines(attr_keys,lines):
     filtered_lines = [line for line in lines if filter_line(line) and is_valid_line(line)]
-    st.text(f"==STAGE 2A== {attr_keys}::=> Original lines {len(lines)}, filtered_lines {len(filtered_lines)}")
-
+   ## st.text(f"==STAGE 2A== {attr_keys}::=> Original lines {len(lines)}, filtered_lines {len(filtered_lines)}")
+        
     pattern = r'\d{1,2}/\d{1,2}/\d{2}, \d{1,2}:\d{2}(?:\s*[APapMm]{2})'
     datetime_lines = [re.sub(pattern, convert_to_24_hour_format, line) for line in filtered_lines]
-    st.text(f"==STAGE 2B== {attr_keys}::=> Original lines {len(lines)}, datetime_lines {len(datetime_lines)}")
+   ## st.text(f"==STAGE 2B== {attr_keys}::=> Original lines {len(lines)}, datetime_lines {len(datetime_lines)}")
+    
+    
+    
+
 
     merged_lines = []
     current_line = ''
 
-    for line in datetime_lines:
+
+    for index, line in enumerate(datetime_lines):
+        #st.text(f":::MAIN LINE :::=>Index :{index}, line {line}")
         if line.startswith('[') and current_line:
+            #st.text(f"In IF :::=>Index :{index}, current_line {current_line}")
             merged_lines.append(current_line.strip())
             current_line = line.strip()
         else:
+            #st.text(f"In ELSE :::=>Index :{index}, line {current_line}")
             current_line += ' ' + line.strip()
 
     if current_line:
         merged_lines.append(current_line.strip())
 
-    st.text(f"==STAGE 2C== {attr_keys}::=> Original lines {len(lines)}, merged_lines {len(merged_lines)}")
+   ## st.text(f"==STAGE 2C== {attr_keys}::=> Original lines {len(lines)}, merged_lines {len(merged_lines)}")
 
     output_lines = []
 
