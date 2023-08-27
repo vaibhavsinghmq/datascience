@@ -14,9 +14,13 @@ import networkx as nx
 import seaborn as sns
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objs as go
+import numpy as np
+from matplotlib.ticker import MultipleLocator
 
 
-st.config.set_option("server.maxUploadSize", 1)
+
+st.config.set_option("server.maxUploadSize", 10)
 
 
 # Main Streamlit app code
@@ -154,7 +158,8 @@ def main():
                         
                         # Create the Seaborn plot with a dark background using the Pandas Series
                         fig, ax = plt.subplots(figsize=(10, 6))
-                        sns.barplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')  # Replace 'orange' with your desired color
+#                        sns.barplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')  # Replace 'orange' with your desired color
+                        sns.lineplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')
                         
                         # Set the title and labels
                         plt.title('Message Frequency by Hour:')
@@ -178,12 +183,19 @@ def main():
                         
                         # Create the Seaborn plot with a dark background using the grouped data
                         fig, ax = plt.subplots(figsize=(10, 6))
-                        sns.barplot(x=weekly_counts.index, y=weekly_counts.values, order=day_order, color='#8A4D76')
+                        ax = sns.barplot(x=weekly_counts.index, y=weekly_counts.values, order=day_order, color='#e892f3')
                         
                         # Set the title and labels
                         plt.title('Message Frequency by Day of the Week')
                         ax.set_xlabel('Day of the Week')
                         ax.set_ylabel('Message Count')
+                        
+                        # Annotate bars with values just above the bars
+                        for i in ax.containers:
+                            ax.bar_label(i,)
+
+
+
                         
                         # Display the plot using Streamlit
                         st.pyplot(fig)
@@ -191,81 +203,108 @@ def main():
                 
                 with st.container():
                     col3, col4 = st.columns(2)
+                    
+                    
                     with col3:
+    
+                        # Assuming 'monthly_counts' is your data and 'month_labels' is defined
+                        monthly_counts_by_year = util.monthly_activity(wa_users_data_df)
+                        monthly_counts_by_year = monthly_counts_by_year.reset_index()
+                        monthly_counts_by_year.columns = ["year", "month_num", "count"]
+
+
+                        # Convert columns to proper types
+                        monthly_counts_by_year["year"] = monthly_counts_by_year["year"].astype(str)
+                        monthly_counts_by_year["month_num"] = monthly_counts_by_year["month_num"].astype(int)
+                        monthly_counts_by_year["count"] = monthly_counts_by_year["count"].astype(int)
                         
-                        # Assuming 'monthly_counts' is your data, and 'month_labels' is defined
-                        monthly_counts = util.monthly_activity(wa_users_data_df)
-                        #st.text(monthly_counts)
-                        month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                        #st.text(monthly_counts_by_year["year"])
+                        ##st.text(monthly_counts_by_year["month_num"])
+                        #st.text(monthly_counts_by_year["count"])
                         
-                        # Create a bar plot with the order of months from January to December
+                        test_df1 = pd.DataFrame({'year': monthly_counts_by_year["year"],
+                                                   'month': monthly_counts_by_year["month_num"],
+                                                   'count': monthly_counts_by_year["count"]})
+                        
                         fig, ax = plt.subplots(figsize=(10, 6))
-                        sns.barplot(x=monthly_counts.index, y=monthly_counts.values, color="#8379f0")
+                        # Set Y-axis ticks at intervals of 100
+                        max_value = test_df1['count'].max()
+                        y_ticks = range(0, max_value + 1, 100)
+                        ax.yaxis.set_ticks(y_ticks)
+                       
+                        #set seaborn plotting aesthetics
+                        sns.set(style='white')
                         
-                        # Set the title and labels
-                        plt.title('Message Frequency by Month')
-                        ax.set_xlabel('Month')
-                        ax.set_ylabel('Message Count')
-                        
-                        # Display the plot using Streamlit
-                        st.pyplot(fig)
-                        
-                           
-                        
+                        #create grouped bar chart
+                        sns.barplot(x='month', y='count', hue='year', data=test_df1) 
+                        st.pyplot(fig)           
+             
+    
                     with col4:
                         
-                        
-                        # emoji analysis
-                        emoji_df = util.emoji_helper(wa_users_data_df)
-
-                        # Extract top 5 emojis and 'Other'
-                        top_5_emojis = emoji_df.head(5)
-                        other_emojis_count = emoji_df['count'].iloc[5:].sum()
-                        other_row = pd.DataFrame({'emoji': ['Other'], 'count': [other_emojis_count]})
-                        
-                        # Combine top 5 and 'Other' into a new DataFrame for pie chart
-                        emoji_pie_df = pd.concat([top_5_emojis, other_row])
-                        
-                        # Reset the index of the DataFrame
-                        emoji_pie_df.reset_index(drop=True, inplace=True)
-                        
-                        # Create a pie chart using Plotly
-                        fig = px.pie(emoji_pie_df, values='count', names='emoji', title='Top 5 Emoji Distribution')
-                        
-                        # Display the pie chart using Streamlit
-                        st.plotly_chart(fig)
-                        
-                        # Display the emoji DataFrame with colors
-                        st.dataframe(emoji_pie_df, height=270)
-    
-                    st.markdown("<br>", unsafe_allow_html=True)
-    
-                    col1, col2= st.columns(2)
-                    
-                    with col1:
                         # daily activity
                         fig, ax = plt.subplots()
                         plt.title('Most common words')
                         plt.imshow(util.keyword_analysis(wa_users_data_df), interpolation='bilinear')
                         plt.axis('off')
                         st.pyplot(fig)
+                        
+                        
+                    st.markdown("<br>", unsafe_allow_html=True)
+    
+                    col1, col2= st.columns(2)
+                    
+                    with col1:
+                        
+                        col31, col41 = st.columns(2)
+                            
+                        # emoji analysis
+                        emoji_df = util.emoji_helper(wa_users_data_df)
+    
+                        with col31:
+                            # Extract top 5 emojis and 'Other'
+                            top_5_emojis = emoji_df.head(5)
+                            other_emojis_count = emoji_df['count'].iloc[5:].sum()
+                            other_row = pd.DataFrame({'emoji': ['Other'], 'count': [other_emojis_count]})
+                            
+                            # Combine top 5 and 'Other' into a new DataFrame for pie chart
+                            emoji_pie_df = pd.concat([top_5_emojis, other_row])
+                            
+                            # Reset the index of the DataFrame
+                            emoji_pie_df.reset_index(drop=True, inplace=True)
+                            
+                            # Create a pie chart using Plotly
+                            fig = px.pie(emoji_pie_df, values='count', names='emoji', title='Top 5 Emoji Distribution', width=300)
+                            
+                            # Display the pie chart using Streamlit
+                            st.plotly_chart(fig)
+                            
+                        with col41:
+                            
+                            # Display the emoji DataFrame with colors
+                            st.dataframe(emoji_df, height=500)
     
                     with col2:
                        
-                        fig, ax = plt.subplots(figsize=(20, 16))
+                        fig, ax = plt.subplots(figsize=(8, 6))
                         
                         # Call the sentiment_helper function and plot the data
-                        util.sentiment_helper(wa_users_data_df).plot(marker='o', ax=ax)
+                        sentiment_data = util.sentiment_helper(wa_users_data_df)
+                        
+                        # Create an interactive sentiment score plot using Plotly
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=sentiment_data.index, y=sentiment_data.values, mode='lines+markers'))
                         
                         # Customize the plot
-                        ax.set_title('Average Sentiment Scores Over Months', fontsize=20)
-                        ax.set_xlabel('Month')
-                        ax.set_ylabel('Average Sentiment Score', fontsize=15)
-                        ax.set_ylim(-1, 1)  # Set y-axis limits for sentiment score
-                        ax.grid()
+                        fig.update_layout(
+                            title='Average Sentiment Scores Over Months',
+                            xaxis_title='Month',
+                            yaxis_title='Average Sentiment Score',
+                            yaxis_range=[-1, 1]  # Set y-axis limits for sentiment score
+                        )
                         
-                        # Display the plot using st.pyplot()
-                        st.pyplot(fig)
+                        # Display the interactive plot using Streamlit
+                        st.plotly_chart(fig)
                         
                     if selected_user == 'Overall':
                         
@@ -291,25 +330,24 @@ def main():
                         out_degree_centrality = nx.out_degree_centrality(G)
                         
                         
-                        # Print the most influential users based on in-degree centrality
-                        first_occurrence=""
-                        loop_counter=0
-                        st.text("Top Influential Users based on In-Degree Centrality:")
-                        for user, centrality in sorted(in_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6]:
-                            if loop_counter == 0:
-                                first_occurrence = centrality
-                                loop_counter=loop_counter+1
-                            st.text(f"{user}: {centrality:.4f}")
                         
-                        # Print the most influential users based on out-degree centrality
-                        loop_counter = 0
-                        st.text("\nTop Influential Users based on Out-Degree Centrality:")
-                        for user, centrality in sorted(out_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6]:
-                            if loop_counter == 0:
-                                out_sec = centrality
-                                loop_counter=loop_counter+1
-                            st.text(f"{user}: {centrality:.4f}")
                             
+                            
+                        # Create DataFrames for in-degree and out-degree centrality
+                        in_degree_df = pd.DataFrame(sorted(in_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6], columns=['User', 'In-Degree Centrality'])
+                        out_degree_df = pd.DataFrame(sorted(out_degree_centrality.items(), key=lambda x: x[1], reverse=True)[:6], columns=['User', 'Out-Degree Centrality'])
+                        
+                        #st.text("==BEGIN==")
+                        first_occurrence = first_centrality = in_degree_df.iloc[0]['In-Degree Centrality']
+                        out_sec = out_degree_df.iloc[0]['Out-Degree Centrality']
+                        
+                        
+                        # Display side-by-side tables
+                        st.write("**Top Influential Users based on In-Degree Centrality:**")
+                        st.table(in_degree_df)
+                        
+                        st.write("**Top Influential Users based on Out-Degree Centrality:**")
+                        st.table(out_degree_df)
                             
                             
                             
@@ -319,19 +357,22 @@ def main():
                             
                        
                         st.markdown(
-                            "In this group of friends who like to talk to each other. Some friends talk more, and some talk less. These numbers show us which friends are really good at talking and who others like to talk to the most. "
-                            "Top Influential Users based on In-Degree Centrality: These are the friends who get talked to a lot. "
-                            "For example, the first number {} means that one friend got talked to by {}% of the other friends. "
-                            "It's like saying approx {} out of every 10 friends like to talk to this friend a lot. "
-                            "Top Influential Users based on Out-Degree Centrality: These are the friends who like to start conversations a lot. "
-                            "For example, the first number {} means that this friend likes to start conversations with {}% of the other friends. "
-                            "So, these numbers help us know which friends are really popular in the group and who likes to talk the most to others. "
-                            "Just like in school, where some kids are really good at making friends and starting conversations."
+                            "In this group of friends who like to talk to each other. Some friends talk more, and some talk less. These numbers show us which friends are really good at talking and who others like to talk to the most."
+                            "\n\nTop Influential Users based on In-Degree Centrality:"
+                            "\n- These are the friends who get talked to a lot."
+                            "\n- For example, the first number {} means that one friend got talked to by {}% of the other friends."
+                            "\n- It's like saying approx {} out of every 10 friends like to talk to this friend a lot."
+                            "\n\nTop Influential Users based on Out-Degree Centrality:"
+                            "\n- These are the friends who like to start conversations a lot."
+                            "\n- For example, the first number {} means that this friend likes to start conversations with {}% of the other friends."
+                            "\n- So, these numbers help us know which friends are really popular in the group and who likes to talk the most to others."
+                            "\n- Just like in school, where some kids are really good at making friends and starting conversations."
                             "".format(
                                 first_occurrence, (first_occurrence * 100), (int(first_occurrence * 10)),
                                 out_sec, (out_sec * 100)
                             )
                         )
+
             else:
                 st.text("Sorry! no data is available. Try another filter")
                         

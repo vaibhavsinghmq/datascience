@@ -74,12 +74,12 @@ def sentiment_helper(df):
 
 def keyword_analysis(df):
     
-    df_temp =df.copy()
+    df_temp = df.copy()
     df_temp = df_temp[~df_temp['message'].str.contains('omitted', case=False)]
 
     # Set up WordCloud parameters
     wc = WordCloud(
-        width=1000, height=800, min_font_size=10, background_color='white'
+        width=800, height=500, min_font_size=10, background_color='white'
     )
     
     cloud = wc.generate(df_temp['message'].str.cat(sep=" "))
@@ -118,9 +118,9 @@ def weekly_activity(df):
     return df.groupby(['day_of_week'])['message'].count()
 
 def monthly_activity(df):
-    monthly_counts = df.groupby(['month_num'])['message'].count()
+    monthly_counts = df.groupby(['year','month_num'])['message'].count()
     # Fill gaps with zero values and reindex
-    monthly_counts = monthly_counts.reindex(range(1, 13), fill_value=0)
+    monthly_counts = monthly_counts.reindex(pd.MultiIndex.from_product([df['year'].unique(), range(1, 13)], names=['year', 'month_num']), fill_value=0)
     return monthly_counts
 
 def emoji_helper(df):
