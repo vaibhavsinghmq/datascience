@@ -6,4 +6,5 @@ networkx
 nltk
 wordcloud
 pandas
+plotly
 emoji

@@ -9,16 +9,11 @@ Created on Sat Aug 19 11:02:17 2023
 import streamlit as st
 import preprocessor, util
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import networkx as nx
 import seaborn as sns
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-import numpy as np
-from matplotlib.ticker import MultipleLocator
-
-
 
 st.config.set_option("server.maxUploadSize", 10)
 
@@ -158,7 +153,6 @@ def main():
                         
                         # Create the Seaborn plot with a dark background using the Pandas Series
                         fig, ax = plt.subplots(figsize=(10, 6))
-#                        sns.barplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')  # Replace 'orange' with your desired color
                         sns.lineplot(x=hourly_counts.index, y=hourly_counts.values, color='#42923b')
                         
                         # Set the title and labels
@@ -304,7 +298,7 @@ def main():
                         )
                         
                         # Display the interactive plot using Streamlit
-                        st.plotly_chart(fig)
+                        st.plotly_chart(fig, use_container_width=True)
                         
                     if selected_user == 'Overall':
                         
@@ -348,12 +342,6 @@ def main():
                         
                         st.write("**Top Influential Users based on Out-Degree Centrality:**")
                         st.table(out_degree_df)
-                            
-                            
-                            
-                        ##st.text(f"first_occurrence:::=>{first_occurrence}")
-                        ##st.text(f"Out_sec:::=>{out_sec}")
-                          
                             
                        
                         st.markdown(

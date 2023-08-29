@@ -17,10 +17,7 @@ import nltk
 nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-
-
 extract = URLExtract()
-
 
 def get_selected_dataframe(selected_year, selected_user, df):
     if selected_year != 'Overall':
@@ -32,63 +29,40 @@ def get_selected_dataframe(selected_year, selected_user, df):
     return df
 
 def fetch_stats(df):
-        
-
     # fetch the number of messages
     num_messages = df.shape[0]
 
     # fetch the total number of words
-    words = []
-    for message in df['message']:
-        words.extend(message.split())
+    words = [word for message in df['message'] for word in message.split()]
 
     # fetch number of media messages
-    num_media_messages = df[df['message'].str.contains(" omitted")].shape[0]
+    num_media_messages = df['message'].str.contains(" omitted").sum()
 
     # fetch number of links shared
-    links = []
-    for message in df['message']:
-        links.extend(extract.find_urls(message))
+    links = [link for message in df['message'] for link in extract.find_urls(message)]
 
-    return num_messages,len(words),num_media_messages,len(links)
-
+    return num_messages, len(words), num_media_messages, len(links)
 
 def sentiment_helper(df):
     # Initialize the SentimentIntensityAnalyzer
     sia = SentimentIntensityAnalyzer()
     
-    df_plot = df.copy()
-    
     # Calculate sentiment scores for each message
-    df_plot['sentiment_score'] = df_plot['message'].apply(lambda x: sia.polarity_scores(x)['compound'])
+    df['sentiment_score'] = df['message'].apply(lambda x: sia.polarity_scores(x)['compound'])
     
     # Group data by month and calculate average sentiment score
-    monthly_sentiment = df_plot.groupby(['month_num'])['sentiment_score'].mean()
-    
-    # Empty the DataFrame by dropping all rows
-    df_plot = df_plot.drop(df_plot.index)
-    
+    monthly_sentiment = df.groupby(['month_num'])['sentiment_score'].mean()
     
     return monthly_sentiment
 
-
 def keyword_analysis(df):
-    
-    df_temp = df.copy()
-    df_temp = df_temp[~df_temp['message'].str.contains('omitted', case=False)]
+    df_temp = df[~df['message'].str.contains('omitted', case=False)]
 
     # Set up WordCloud parameters
-    wc = WordCloud(
-        width=800, height=500, min_font_size=10, background_color='white'
-    )
-    
+    wc = WordCloud(width=800, height=450, min_font_size=10, background_color='white')
     cloud = wc.generate(df_temp['message'].str.cat(sep=" "))
 
-    # Empty the DataFrame by dropping all rows
-    df_temp = df_temp.drop(df_temp.index)
-
     return cloud
-
 
 def network_analysis(df_plot):
     # Extract usernames from messages
@@ -98,7 +72,7 @@ def network_analysis(df_plot):
     G = nx.DiGraph()
     
     # Iterate through DataFrame to add edges (interactions) between users
-    for index, row in df_plot.iterrows():
+    for _, row in df_plot.iterrows():
         sender = row['user']
         message = row['message']
         mentions = [word for word in message.split() if word.startswith('@')]
@@ -110,7 +84,6 @@ def network_analysis(df_plot):
     
     return G
 
-
 def hourly_activity(df):
     return df.groupby(['hour'])['message'].count()
 
@@ -118,15 +91,11 @@ def weekly_activity(df):
     return df.groupby(['day_of_week'])['message'].count()
 
 def monthly_activity(df):
-    monthly_counts = df.groupby(['year','month_num'])['message'].count()
+    monthly_counts = df.groupby(['year', 'month_num'])['message'].count()
     # Fill gaps with zero values and reindex
     monthly_counts = monthly_counts.reindex(pd.MultiIndex.from_product([df['year'].unique(), range(1, 13)], names=['year', 'month_num']), fill_value=0)
     return monthly_counts
 
 def emoji_helper(df):
-    emojis = []
-    for message in df['message']:
-        emojis.extend([c for c in message if c in emoji.EMOJI_DATA])
-
-    return pd.DataFrame(Counter(emojis).most_common(len(Counter(emojis)))).rename(
-        columns={0: 'emoji', 1: 'count'})
+    emojis = [c for message in df['message'] for c in message if c in emoji.EMOJI_DATA]
+    return pd.DataFrame(Counter(emojis).most_common(len(Counter(emojis)))).rename(columns={0: 'emoji', 1: 'count'})
